@@ -1,18 +1,12 @@
-import streamlit as st
+import streamlit as st 
 import pickle
 import pandas as pd
 import requests
 from urllib.parse import quote_plus
 
-# -----------------------------
-# API KEYS
-# -----------------------------
 OMDB_API_KEY = "daf91aa9"
 TMDB_API_KEY = "8265bd1679663a7ea12ac168da84d2e8"
 
-# -----------------------------
-# FETCH POSTER FROM OMDB
-# -----------------------------
 @st.cache_data(show_spinner=False)
 def fetch_poster_omdb(title):
     try:
@@ -26,9 +20,6 @@ def fetch_poster_omdb(title):
         pass
     return None, None, None
 
-# -----------------------------
-# FETCH POSTER FROM TMDB
-# -----------------------------
 @st.cache_data(show_spinner=False)
 def fetch_poster_tmdb(title):
     try:
@@ -46,9 +37,6 @@ def fetch_poster_tmdb(title):
         pass
     return None, None, None
 
-# -----------------------------
-# FETCH POSTER (Combined)
-# -----------------------------
 def fetch_poster(title):
     poster, plot, rating = fetch_poster_omdb(title)
     if not poster:
@@ -59,14 +47,10 @@ def fetch_poster(title):
         rating = "N/A"
     return poster, plot, rating
 
-# -----------------------------
-# RECOMMEND MOVIES
-# -----------------------------
 def recommend(movie, num_recommendations):
     movie_index = moviess[moviess['title'] == movie].index[0]
     distances = similarity[movie_index]
     movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:num_recommendations + 1]
-
     recommended_movies, recommended_posters, plots, ratings = [], [], [], []
     for i in movies_list:
         title = moviess.iloc[i[0]].title
@@ -77,18 +61,11 @@ def recommend(movie, num_recommendations):
         ratings.append(rating)
     return recommended_movies, recommended_posters, plots, ratings
 
-# -----------------------------
-# LOAD DATA (✅ FIXED FILE NAMES)
-# -----------------------------
-moviess = pickle.load(open('movie_list.pkl', 'rb'))  # <-- fixed filename
+moviess = pickle.load(open('movie_list.pkl', 'rb'))
 similarity = pickle.load(open('similarity.pkl', 'rb'))
 
-# -----------------------------
-# STREAMLIT UI SETUP
-# -----------------------------
 st.set_page_config(page_title="Movie Recommendation System", page_icon="🎬", layout="wide")
 
-# ------------------ STYLING -------------------
 st.markdown("""
 <style>
 html, body, [class*="css"] {
@@ -128,14 +105,16 @@ section.main > div {
     display: block; margin: 0 auto;
 }
 .stButton>button:hover { background-color: #444; transform: scale(1.03); }
-
-/* --- Corrected Search Bar Width --- */
 div[data-testid="stSelectbox"] {
     display: flex;
     justify-content: center;
 }
+/* Add horizontal spacing between label and selectbox */
+div[data-testid="stSelectbox"] > label {
+    margin-right: 10px;  /* space between "🔍 Search for a movie:" and selectbox */
+}
 div[data-testid="stSelectbox"] > div {
-    width: 80% !important; /* Adjust width here */
+    width: 80% !important;
 }
 div[data-baseweb="select"] > div {
     background-color: #111 !important;
@@ -143,12 +122,15 @@ div[data-baseweb="select"] > div {
     border-radius: 8px;
     border: 1px solid #333;
 }
-
+/* Make typed text in the selectbox white */
+div[data-baseweb="select"] input {
+    color: white !important;
+}
 .hero {
     position: relative; height: 60vh; width: 100%;
     background-size: cover; background-position: center;
     box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
-    margin-top: 10px; border-radius: 10px;
+    margin: 20px auto; border-radius: 10px;
 }
 .hero-content { position: absolute; bottom: 20px; left: 30px; max-width: 50%; }
 .hero h1 { font-size: 2.5rem; font-weight: 800; color: white; }
@@ -172,17 +154,8 @@ hr { border: 0; border-top: 1px solid rgba(255,255,255,0.1); }
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------ HEADER -------------------
 st.markdown("<div class='header'><h1>🎬 Movie Recommendation System</h1></div>", unsafe_allow_html=True)
 
-# ------------------ SEARCH SECTION -------------------
-st.markdown("<div class='search-section'>", unsafe_allow_html=True)
-selected_movie_name = st.selectbox("🔍 Search for a movie:", moviess['title'].values, key="movie_search")
-num_recommendations = st.slider("🎯 # of Recommendations", 5, 15, 5, key="slider_num")
-recommend_button = st.button("🎬 Recommend", use_container_width=False)
-st.markdown("</div>", unsafe_allow_html=True)
-
-# ------------------ HERO SECTION -------------------
 st.markdown(f"""
 <div class="hero" style="background-image:url('https://image.slidesdocs.com/responsive-images/background/black-black-screen-with-movie-reel-powerpoint-background_1522b0f64b__960_540.jpg');">
     <div class="hero-content">
@@ -193,7 +166,12 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ------------------ RECOMMENDATIONS -------------------
+st.markdown("<div class='search-section'>", unsafe_allow_html=True)
+selected_movie_name = st.selectbox("🔍 Search for a movie:", moviess['title'].values, key="movie_search")
+num_recommendations = st.slider("🎯 # of Recommendations", 5, 15, 5, key="slider_num")
+recommend_button = st.button("🎬 Recommend", use_container_width=False)
+st.markdown("</div>", unsafe_allow_html=True)
+
 if recommend_button:
     with st.spinner("✨ Fetching your movie recommendations..."):
         names, posters, plots, ratings = recommend(selected_movie_name, num_recommendations)
@@ -212,6 +190,3 @@ if recommend_button:
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-
-# ------------------ FOOTER -------------------
-st.markdown("<br><hr><center>Built with ❤️ using Streamlit | OMDb | TMDb APIs 🎥</center>", unsafe_allow_html=True)
